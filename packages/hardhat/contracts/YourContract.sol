@@ -84,4 +84,11 @@ contract YourContract {
 	 * Function that allows the contract to receive ETH
 	 */
 	receive() external payable {}
+
+	/**
+	 * Function that allows a solo staker to register
+	 */
+	function register() public {
+		// Add your logic here
+	}
 }
