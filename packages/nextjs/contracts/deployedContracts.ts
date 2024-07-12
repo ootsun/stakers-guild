@@ -21,44 +21,96 @@ const deployedContracts = {
           type: "constructor",
         },
         {
-          anonymous: false,
           inputs: [
             {
-              indexed: true,
-              internalType: "address",
-              name: "greetingSetter",
-              type: "address",
+              internalType: "uint32",
+              name: "",
+              type: "uint32",
             },
+          ],
+          name: "attestationMapping",
+          outputs: [
             {
-              indexed: false,
-              internalType: "string",
-              name: "newGreeting",
-              type: "string",
+              internalType: "uint32",
+              name: "",
+              type: "uint32",
             },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
             {
-              indexed: false,
-              internalType: "bool",
-              name: "premium",
-              type: "bool",
-            },
-            {
-              indexed: false,
               internalType: "uint256",
               name: "value",
               type: "uint256",
             },
           ],
-          name: "GreetingChange",
-          type: "event",
+          name: "claim",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint32",
+              name: "",
+              type: "uint32",
+            },
+          ],
+          name: "claimsMapping",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint32[]",
+              name: "missedAssestationValidatorColl",
+              type: "uint32[]",
+            },
+          ],
+          name: "epochEnd",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
         },
         {
           inputs: [],
-          name: "greeting",
+          name: "genesisBlockNumber",
           outputs: [
             {
-              internalType: "string",
+              internalType: "uint256",
               name: "",
-              type: "string",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "identityMapping",
+          outputs: [
+            {
+              internalType: "uint32",
+              name: "",
+              type: "uint32",
             },
           ],
           stateMutability: "view",
@@ -78,13 +130,19 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "premium",
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "pendingValidatorColl",
           outputs: [
             {
-              internalType: "bool",
+              internalType: "uint32",
               name: "",
-              type: "bool",
+              type: "uint32",
             },
           ],
           stateMutability: "view",
@@ -100,53 +158,20 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "string",
-              name: "_newGreeting",
-              type: "string",
-            },
-          ],
-          name: "setGreeting",
-          outputs: [],
-          stateMutability: "payable",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "totalCounter",
-          outputs: [
-            {
               internalType: "uint256",
               name: "",
               type: "uint256",
             },
           ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          name: "userGreetingCounter",
+          name: "registeredValidatorColl",
           outputs: [
             {
-              internalType: "uint256",
+              internalType: "uint32",
               name: "",
-              type: "uint256",
+              type: "uint32",
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "withdraw",
-          outputs: [],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {
