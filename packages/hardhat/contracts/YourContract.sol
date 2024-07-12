@@ -117,9 +117,11 @@ contract YourContract {
 	 */
 	receive() external payable 
 	{
-		if(genesisBlockNumber == 0)
+		console.log("start receive function");
+		if(genesisBlockNumber != 0)
 		{
 			uint valueToDistribute = address(this).balance;
+			console.log("value to distribute = ", valueToDistribute);
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
 				valueToDistribute -= registeredValidatorColl[i];
@@ -132,6 +134,11 @@ contract YourContract {
 			}
 		}
 		genesisBlockNumber = block.number;
+		console.log("genesysBlockNumber = ", genesisBlockNumber);
+		if(pendingValidatorColl.length == 0)
+		{
+			return;
+		}
 		//add the pending validators and clear the list
 		for (uint i = pendingValidatorColl.length - 1; i >= 0; --i) 
 		{
@@ -140,5 +147,6 @@ contract YourContract {
 			registeredValidatorColl.push(pendingValidatorColl[i]);
 			pendingValidatorColl.pop();
         }
+		console.log("end receive function");
 	}
 }
