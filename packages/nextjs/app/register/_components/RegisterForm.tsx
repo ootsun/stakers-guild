@@ -7,6 +7,7 @@ import {ContractName, GenericContract, InheritedFunctions} from "~~/utils/scaffo
 import {InputBase, RainbowKitCustomConnectButton} from "~~/components/scaffold-eth";
 import React, {useEffect, useState} from "react";
 import { IDKitWidget, VerificationLevel, ISuccessResult } from '@worldcoin/idkit'
+import {BlockscoutLink} from "~~/components/BlockscoutLink";
 
 type RegisterUIProps = {
     contractName: ContractName;
@@ -28,6 +29,7 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
     const [validatorControlStepSignedMessage, setValidatorControlStepSignedMessage] = useState("");
     const [validatorControlValidatorId, setValidatorControlValidatorId] = useState(0);
     const [transactionSignatureStep, setTransactionSignatureStep] = useState(false);
+    const [hash, setHash] = useState("");
 
     useEffect(() => {
         if (connectedAddress) {
@@ -132,6 +134,7 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
                     });
                 let smartContractResponse = await writeTxn(makeWriteWithParams);
                 console.log("smartContractResponse", smartContractResponse)
+                setHash(smartContractResponse+'')
                 setTransactionSignatureStep(true)
             } catch (e: any) {
                 console.error("⚡️ ~ file: RegisterForm.tsx:handleWrite ~ error", e);
@@ -196,7 +199,7 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
                 transactionSignatureStep && (
                     <div
                         className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
-                        <p>You are now registered! Well done 🎉</p>
+                        <p>You are now registered <BlockscoutLink hash={hash}/>! Well done 🎉</p>
                     </div>
                 )
             }

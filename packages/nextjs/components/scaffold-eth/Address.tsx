@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { Address as AddressType, getAddress, isAddress } from "viem";
@@ -11,6 +11,7 @@ import { CheckCircleIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outl
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
+import {BlockscoutLink} from "~~/components/BlockscoutLink";
 
 type AddressProps = {
   address?: AddressType;
@@ -136,6 +137,7 @@ export const Address = ({ address, disableAddressLink, format, size = "base" }: 
           />
         </CopyToClipboard>
       )}
+      <BlockscoutLink address={address}/>
     </div>
   );
 };

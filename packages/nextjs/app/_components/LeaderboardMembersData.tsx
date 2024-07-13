@@ -4,6 +4,7 @@ import {useReadContract} from "wagmi";
 import {useTargetNetwork} from "~~/hooks/scaffold-eth";
 import React, {useState} from "react";
 import {Address} from "~~/components/scaffold-eth";
+import {BlockscoutLink} from "~~/components/BlockscoutLink";
 
 type LeaderboardMemberDataProps = {
     deployedContractData: any;
@@ -91,7 +92,7 @@ export const LeaderboardMemberData = ({deployedContractData, memberIndexes}: Lea
                         <tbody>
                         {members.map((member) => (
                             <tr key={member.validatorId}>
-                                <td><Address address={member.address} format="long" /></td>
+                                <td><Address address={member.address} format="long"/></td>
                                 <td>{member.validatorId}</td>
                                 <td>{member.missedAttestation}</td>
                                 <td>{member.claimableValue}</td>

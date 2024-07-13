@@ -7,6 +7,7 @@ import {ContractName, GenericContract, InheritedFunctions} from "~~/utils/scaffo
 import {InputBase} from "~~/components/scaffold-eth";
 import React, {useState} from "react";
 import {parseEther} from "viem";
+import {BlockscoutLink} from "~~/components/BlockscoutLink";
 
 type RegisterUIProps = {
     contractName: ContractName;
@@ -18,7 +19,7 @@ export const ClaimForm = ({contractName}: RegisterUIProps) => {
     const {data: deployedContractData, isLoading: deployedContractLoading} = useDeployedContractInfo(contractName);
     const writeTxn = useTransactor();
 
-    const [claimDone, setClaimDone] = useState(false);
+    const [txHash, setTxHash] = useState("");
     const [claimAmount, setClaimAmount] = useState(0.1);
 
     if (deployedContractLoading) {
@@ -66,9 +67,9 @@ export const ClaimForm = ({contractName}: RegisterUIProps) => {
                         abi: deployedContractData.abi,
                         args: [parseEther(claimAmount + "")],
                     });
-                let smartContractResponse = await writeTxn(makeWriteWithParams);
-                console.log("smartContractResponse", smartContractResponse)
-                setClaimDone(true)
+                let hash = await writeTxn(makeWriteWithParams);
+                console.log("hash", hash)
+                setTxHash(hash + "")
             } catch (e: any) {
                 console.error("⚡️ ~ file: ClaimForm.tsx:handleWrite ~ error", e);
             }
@@ -83,16 +84,16 @@ export const ClaimForm = ({contractName}: RegisterUIProps) => {
 
     return (
         <>
-            {!claimDone && (
+            {!txHash && (
                 <div
                     className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
                     <InputBase {...inputPropsClaimAmount} />
                     <button className="btn btn-sm btn-primary" onClick={handleWrite}>Claim</button>
                 </div>)}
-            {claimDone && (
+            {txHash && (
                 <div
                     className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
-                    <p>Well deserved! 🎉 Keep your validator up and running to continue accruing rewards.</p>
+                    <p>Well deserved! 🎉 Keep your validator up and running to continue accruing rewards. View your transaction: <BlockscoutLink hash={txHash}/></p>
                 </div>)}
         </>
     );

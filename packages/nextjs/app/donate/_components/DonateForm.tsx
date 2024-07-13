@@ -7,6 +7,7 @@ import {ContractName, GenericContract, InheritedFunctions} from "~~/utils/scaffo
 import {InputBase} from "~~/components/scaffold-eth";
 import React, {useEffect, useState} from "react";
 import {parseEther} from "viem";
+import {BlockscoutLink} from "~~/components/BlockscoutLink";
 
 type DonateUIProps = {
     contractName: ContractName;
@@ -64,7 +65,7 @@ export const DonateForm = ({contractName}: DonateUIProps) => {
                 hash && (
                     <div
                         className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
-                        <p>Your donation is in! Thank you 🎉</p>
+                        <p>Your donation is in <BlockscoutLink hash={hash}/>! Thank you 🎉</p>
                     </div>
                 )
             }
