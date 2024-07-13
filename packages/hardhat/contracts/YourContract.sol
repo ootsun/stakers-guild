@@ -26,6 +26,7 @@ contract YourContract {
 	mapping(uint32 => uint) public claimsMapping; //validator id to claimable value
 	mapping(uint32 => uint32) public attestationMapping; //validator id to qyt of missed attestation blocks
 	mapping(address => uint32) public identityMapping; //validator owner to validator id
+	address private backEndWalletAddress = 0xa1E860D34A0D426f4159cB4221f9023d7341bEfB;
 	uint32 qtyBlocksPerEpoch = 1; //using a variable for this is easier to test on hardhat (should be 32 in prod)
 
 	// Events: a way to emit log statements from smart contract that can be listened to by external parties
@@ -104,16 +105,64 @@ contract YourContract {
 		}
 	}
 
+	function getMessageHash(string memory _msg) private pure returns (bytes32) {
+		return keccak256(abi.encodePacked(_msg));
+	}
+
+	function getEthHashedMessage(bytes32 _msg)
+	private
+	pure
+	returns (bytes32)
+	{
+		return
+			keccak256(
+			abi.encodePacked("\x19Ethereum Signed Message:\n32", _msg)
+		);
+	}
+
+	function recover(bytes32 _ethHashMessage , bytes memory _sig) private pure returns(address){
+		(bytes32 r , bytes32 s , uint8 v) = _split(_sig);
+		return ecrecover(_ethHashMessage, v, r, s);
+	}
+
+	function _split(bytes memory _sig) private pure returns(bytes32 r ,bytes32 s , uint8 v) {
+		require(_sig.length==65,"Signature is not valid");
+		assembly{
+			r :=mload(add(_sig,32))
+			s := mload(add(_sig,64))
+			v :=byte(0,mload(add(_sig,96)))
+		}
+	}
+
+	function stringToBytes32(string memory source) private pure returns (bytes32 result) {
+		bytes memory tempEmptyStringTest = bytes(source);
+		if (tempEmptyStringTest.length == 0) {
+			return 0x0;
+		}
+
+		assembly {
+		// Load the first 32 bytes of the string and store it in result
+			result := mload(add(source, 32))
+		}
+	}
+
 	/**
 	 * Function that allows a solo staker to register
 	 */
-	function register(uint32 validatorReference) public 
-	{
-		claimsMapping[validatorReference] = 0;
-		attestationMapping[validatorReference] = 0;
-		identityMapping[msg.sender] = validatorReference;
-		console.log("adding validator ", validatorReference, " to the pending validator list");
-		pendingValidatorColl.push(validatorReference);
+	function register(uint32 validatorReference) public
+    {
+        //Could not make it work
+//		bytes32  _hashMessage = getMessageHash(_message);
+//		bytes32 _ethHashMessage = getEthHashedMessage(_hashMessage);
+//		address signer = recover(stringToBytes32(_message), signature);
+//		console.log("signer=",signer);
+//		console.log("backEndWalletAddress=",backEndWalletAddress);
+//		require (signer == backEndWalletAddress, "Signature is not valid");
+        claimsMapping[validatorReference] = 0;
+        attestationMapping[validatorReference] = 0;
+        identityMapping[msg.sender] = validatorReference;
+        console.log("adding validator ", validatorReference, " to the pending validator list");
+        pendingValidatorColl.push(validatorReference);
 	}
 
 	/**

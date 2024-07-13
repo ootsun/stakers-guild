@@ -34,5 +34,6 @@ export async function POST(request: Request) {
 
     // Sign the message
     const signedMessage = await wallet.signMessage(validatorId);
-    return NextResponse.json({signedMessage})
+    console.log({signedMessage})
+    return NextResponse.json(signedMessage)
 }
