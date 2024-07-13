@@ -5,7 +5,7 @@ import {useAccount, useWriteContract} from "wagmi";
 import {WriteOnlyFunctionForm} from "~~/app/debug/_components/contract";
 import {useDeployedContractInfo, useTargetNetwork} from "~~/hooks/scaffold-eth";
 import {ContractName, GenericContract, InheritedFunctions} from "~~/utils/scaffold-eth/contract";
-import {RainbowKitCustomConnectButton} from "~~/components/scaffold-eth";
+import {InputBase, RainbowKitCustomConnectButton} from "~~/components/scaffold-eth";
 import React, {useEffect, useState} from "react";
 import { IDKitWidget, VerificationLevel, ISuccessResult } from '@worldcoin/idkit'
 
@@ -23,6 +23,11 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
     const [connectStep, setConnectStep] = useState(false);
     const [worldIDStep, setWorldIDStep] = useState(false);
     const [validatorControlStep, setValidatorControlStep] = useState(false);
+    const [worldIDStepSignedMessage, setWorldIDStepSignedMessage] = useState("");
+    const [validatorControlValidatorSignedMessage, setValidatorControlValidatorSignedMessage] = useState("");
+    const [validatorControlStepSignedMessage, setValidatorControlSignedMessage] = useState("");
+    const [validatorControlValidatorId, setValidatorControlValidatorId] = useState("");
+    const [transactionSignatureStep, setTransactionSignatureStep] = useState(false);
 
     useEffect(() => {
         if (connectedAddress) {
@@ -62,7 +67,7 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
     }
 
     const handleVerify = async (proof: ISuccessResult) => {
-        const res = await fetch("/api/verify", { // route to your backend will depend on implementation
+        const res = await fetch("/api/verify/worldcoin", { // route to your backend will depend on implementation
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -72,6 +77,7 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
         if (!res.ok) {
             throw new Error("Verification failed."); // IDKit will display the error message to the user in the modal
         }
+        setWorldIDStepSignedMessage(await res.json())
     };
 
     const onSuccess = () => {
@@ -80,13 +86,41 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
         setWorldIDStep(true)
     };
 
+    const verifyValidatorSignedMessage = async () => {
+        const res = await fetch("/api/verify/validator", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({validatorSignedMessage: validatorControlValidatorSignedMessage, worldIDStepSignedMessage, validatorId: validatorControlValidatorId}),
+        })
+        if (!res.ok) {
+            throw new Error("Verification failed.");
+        }
+        setValidatorControlStep(true)
+        setValidatorControlSignedMessage(await res.text())
+    }
+
+    const inputPropsValidatorControlSignedMessage = {
+        name: 'validatorControlValidatorSignedMessage',
+        value: validatorControlValidatorSignedMessage,
+        placeholder: 'Your signed message',
+        onChange: (value: any) => setValidatorControlValidatorSignedMessage(value)
+    };
+    const inputPropsValidatorControlValidatorId = {
+        name: 'validatorControlValidatorId',
+        value: validatorControlValidatorId,
+        placeholder: 'Your validator id',
+        onChange: (value: any) => setValidatorControlValidatorId(value)
+    };
 
     return (
         <>
             <ul className="steps">
-                <li className="step step-primary">Connect your wallet</li>
+                <li className="step step-primary">Connection</li>
                 <li className={`step ${connectStep ? 'step-primary' : ''}`}>World ID</li>
-                <li className="step">Validator control</li>
+                <li className={`step ${worldIDStep ? 'step-primary' : ''}`}>Validator control</li>
+                <li className={`step ${validatorControlStep ? 'step-primary' : ''}`}>Transaction signature</li>
             </ul>
             {!connectStep && (
                 <div
@@ -100,11 +134,11 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
                     className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
                     <p>Please go in your Worldcoin App</p>
                     <IDKitWidget
-                        app_id="your app id" // obtained from the Developer Portal
-                        action="your action id" // obtained from the Developer Portal
+                        app_id="app_staging_b98a7bb6eed48c29f711c1a58dd1afca" // obtained from the Developer Portal
+                        action="register" // obtained from the Developer Portal
                         onSuccess={onSuccess} // callback when the modal is closed
                         handleVerify={handleVerify} // callback when the proof is received
-                        verification_level={VerificationLevel.Orb}
+                        verification_level={VerificationLevel.Device}
                     >
                         {({ open }) =>
                             // This is the button that will open the IDKit modal
@@ -113,14 +147,35 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
                     </IDKitWidget>
                 </div>)
             }
-            {/*<WriteOnlyFunctionForm*/}
-            {/*  abi={deployedContractData.abi as Abi}*/}
-            {/*  key={`${fn.fn.name}`}*/}
-            {/*  abiFunction={fn.fn}*/}
-            {/*  onChange={onChange}*/}
-            {/*  contractAddress={deployedContractData.address}*/}
-            {/*  inheritedFrom={fn.inheritedFrom}*/}
-            {/*/>*/}
+            {
+                worldIDStep && !validatorControlStep && (
+                    <div
+                        className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
+                        <p>To prove that you are in control of the validator, please sign a message with its private key or its withdrawal address private key.</p>
+                        <p>The message to sign is: <strong>OK</strong></p>
+                        <InputBase {...inputPropsValidatorControlSignedMessage} />
+                        <InputBase {...inputPropsValidatorControlValidatorId} />
+                        <button className="btn btn-sm btn-primary" onClick={verifyValidatorSignedMessage}>Verify</button>
+                    </div>
+                )
+            }
+            {
+                validatorControlStep && !transactionSignatureStep && (
+                    <div
+                        className="bg-base-100 border-base-300 border shadow-md shadow-secondary rounded-3xl px-6 lg:px-8 mb-6 space-y-1 py-4 my-5">
+                        <p>Last step! You can now sign this transaction to be registered as a member and start earning rewards.</p>
+                        {/*<button className="btn btn-sm btn-primary" onClick={verifyValidatorSignedMessage}>Verify</button>*/}
+                        <WriteOnlyFunctionForm
+                            abi={deployedContractData.abi as Abi}
+                            key={`${fn.fn.name}`}
+                            abiFunction={fn.fn}
+                            onChange={onChange}
+                            contractAddress={deployedContractData.address}
+                            inheritedFrom={fn.inheritedFrom}
+                        />
+                    </div>
+                )
+            }
         </>
     );
 };
