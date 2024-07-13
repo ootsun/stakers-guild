@@ -26,7 +26,7 @@ contract YourContract {
 	mapping(uint32 => uint) public claimsMapping; //validator id to claimable value
 	mapping(uint32 => uint32) public attestationMapping; //validator id to qyt of missed attestation blocks
 	mapping(address => uint32) public identityMapping; //validator owner to validator id
-	bytes private backEndPublicKey = "todo";
+	uint32 qtyBlocksPerEpoch = 1; //using a variable for this is easier to test on hardhat (should be 32 in prod)
 
 	// Events: a way to emit log statements from smart contract that can be listened to by external parties
 	// event GreetingChange(
@@ -100,16 +100,20 @@ contract YourContract {
 	{
 		for(uint i = 0; i < missedAssestationValidatorColl.length; ++i)
 		{
-			attestationMapping[missedAssestationValidatorColl[i]] += 32;
+			attestationMapping[missedAssestationValidatorColl[i]] += qtyBlocksPerEpoch;
 		}
 	}
 
 	/**
 	 * Function that allows a solo staker to register
 	 */
-	function register() public 
+	function register(uint32 validatorReference) public 
 	{
-		// Add your logic here
+		claimsMapping[validatorReference] = 0;
+		attestationMapping[validatorReference] = 0;
+		identityMapping[msg.sender] = validatorReference;
+		console.log("adding validator ", validatorReference, " to the pending validator list");
+		pendingValidatorColl.push(validatorReference);
 	}
 
 	/**
@@ -120,32 +124,47 @@ contract YourContract {
 		console.log("start receive function");
 		if(genesisBlockNumber != 0)
 		{
+			//the transferred value for this transaction is already included in the contract balance
+			console.log("contract balance = ", address(this).balance);
 			uint valueToDistribute = address(this).balance;
-			console.log("value to distribute = ", valueToDistribute);
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
-				valueToDistribute -= registeredValidatorColl[i];
+				valueToDistribute -= claimsMapping[registeredValidatorColl[i]];
 			}
+			console.log("value to distribute = ", valueToDistribute);
 			uint qtyBlocksInPeriod = block.number - genesisBlockNumber;
-			uint valuePerBlock = valueToDistribute / qtyBlocksInPeriod / registeredValidatorColl.length;
+			console.log("qtyBlocksInPeriod = ", qtyBlocksInPeriod);
+			uint32 totalQtyMissedAttestations;
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
-				claimsMapping[registeredValidatorColl[i]] += ((qtyBlocksInPeriod - attestationMapping[registeredValidatorColl[i]]) * valuePerBlock) / qtyBlocksInPeriod;
+				totalQtyMissedAttestations += attestationMapping[registeredValidatorColl[i]];
+			}
+			console.log("totalQtyMissedAttestations = ", totalQtyMissedAttestations);
+			uint valuePerBlockAndValidator = valueToDistribute / ((qtyBlocksInPeriod * registeredValidatorColl.length) - totalQtyMissedAttestations);
+			console.log("valuePerBlockAndValidator = ", valuePerBlockAndValidator);
+			for(uint i = 0; i < registeredValidatorColl.length; ++i)
+			{
+				console.log("missed attestations for validator ", i, " = ", attestationMapping[registeredValidatorColl[i]]);
+				claimsMapping[registeredValidatorColl[i]] += (qtyBlocksInPeriod - attestationMapping[registeredValidatorColl[i]]) * valuePerBlockAndValidator;
+				console.log("value of ", claimsMapping[registeredValidatorColl[i]], " can now be claimed by validator ", registeredValidatorColl[i]);
 			}
 		}
 		genesisBlockNumber = block.number;
-		console.log("genesysBlockNumber = ", genesisBlockNumber);
+		console.log("genesisBlockNumber = ", genesisBlockNumber);
 		if(pendingValidatorColl.length == 0)
 		{
+			console.log("returning from function because pendigValidatorColl is empty");
 			return;
 		}
 		//add the pending validators and clear the list
-		for (uint i = pendingValidatorColl.length - 1; i >= 0; --i) 
+		console.log("pendingValidatorColl.length = ", pendingValidatorColl.length);
+		for (int i = int(pendingValidatorColl.length - 1); i >= 0; --i)
 		{
-            claimsMapping[pendingValidatorColl[i]] = 0;
-			attestationMapping[pendingValidatorColl[i]] = 0;
-			registeredValidatorColl.push(pendingValidatorColl[i]);
+			console.log("moving validator ", pendingValidatorColl[uint(i)], " to the registered validator list");
+			registeredValidatorColl.push(pendingValidatorColl[uint(i)]);
+			console.log("pushed validator to the registeredValidatorColl");
 			pendingValidatorColl.pop();
+			console.log("removed validator from the pendigValidatorColl");
         }
 		console.log("end receive function");
 	}
