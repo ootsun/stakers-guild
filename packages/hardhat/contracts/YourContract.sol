@@ -25,6 +25,7 @@ contract YourContract {
 	uint32[] public registeredValidatorColl; //used to iterate the mappings which have the validator key as id
 	mapping(uint32 => uint) public claimsMapping; //validator id to claimable value
 	mapping(uint32 => uint32) public attestationMapping; //validator id to qyt of missed attestation blocks
+	mapping(uint32 => address) public addressMapping; //validator id to registered address
 	mapping(address => uint32) public identityMapping; //validator owner to validator id
 	address private backEndWalletAddress = 0xa1E860D34A0D426f4159cB4221f9023d7341bEfB;
 	uint32 qtyBlocksPerEpoch = 1; //using a variable for this is easier to test on hardhat (should be 32 in prod)
@@ -49,6 +50,14 @@ contract YourContract {
 		// msg.sender: predefined variable that represents address of the account that called the current function
 		require(msg.sender == owner, "Not the Owner");
 		_;
+	}
+
+	function getPendingValidatorColl() public view returns (uint32[] memory) {
+		return pendingValidatorColl;
+	}
+
+	function getRegisteredValidatorColl() public view returns (uint32[] memory) {
+		return registeredValidatorColl;
 	}
 
 	/**
@@ -161,6 +170,7 @@ contract YourContract {
         claimsMapping[validatorReference] = 0;
         attestationMapping[validatorReference] = 0;
         identityMapping[msg.sender] = validatorReference;
+		addressMapping[validatorReference] = msg.sender;
         console.log("adding validator ", validatorReference, " to the pending validator list");
         pendingValidatorColl.push(validatorReference);
 	}

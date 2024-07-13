@@ -6,10 +6,9 @@ import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Address } from "~~/components/scaffold-eth";
+import {Leaderboard} from "~~/app/_components/Leaderboard";
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
-
   return (
     <div className="min-h-screen m-10">
       <header className="bg-black text-white py-6 flex px-4">
@@ -23,6 +22,7 @@ const Home: NextPage = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        <Leaderboard contractName="YourContract"/>
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
           <div className="space-y-6">
