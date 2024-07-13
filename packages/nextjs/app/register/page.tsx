@@ -13,7 +13,9 @@ const Register: NextPage = () => {
     <>
       <div className="text-center mt-8 p-10">
         <h1 className="text-4xl my-0">Register</h1>
-        <p className="text-neutral">Some explanation here</p>
+        <p className="text-neutral"><strong className="font-semibold">Membership:</strong> Join a community of like-minded solo stakers who
+            are dedicated to the Ethereum network. Membership is open to all solo stakers who share our values and
+            commitment to decentralization.</p>
         <RegisterForm contractName="YourContract" />
       </div>
     </>

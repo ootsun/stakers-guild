@@ -35,6 +35,14 @@ export const RegisterForm = ({contractName}: RegisterUIProps) => {
         }
     })
 
+    if (deployedContractLoading) {
+        return (
+            <div className="mt-14">
+                <span className="loading loading-spinner loading-lg"></span>
+            </div>
+        );
+    }
+
     if (!deployedContractData) {
         return (
             <p className="text-3xl mt-14">

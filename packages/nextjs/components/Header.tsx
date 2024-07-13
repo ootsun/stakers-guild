@@ -25,9 +25,13 @@ export const menuLinks: HeaderMenuLink[] = [
     icon: <BugAntIcon className="h-4 w-4" />,
   },
   {
+    label: "Donate",
+    href: "/donate",
+  },
+  {
     label: "Register",
     href: "/register",
-  },
+  }
 ];
 
 export const HeaderMenuLinks = () => {
