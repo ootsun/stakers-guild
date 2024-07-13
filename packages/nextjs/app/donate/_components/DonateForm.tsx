@@ -18,9 +18,9 @@ export const DonateForm = ({contractName}: DonateUIProps) => {
 
     const [donationAmount, setDonationAmount] = useState(0.1);
 
-    const { data: hash, sendTransaction, isPending } = useSendTransaction()
-console.log(hash)
-console.log("isPending", isPending)
+    const {data: hash, sendTransaction, isPending} = useSendTransaction()
+    console.log(hash)
+    console.log("isPending", isPending)
 
     if (deployedContractLoading) {
         return (
@@ -45,7 +45,7 @@ console.log("isPending", isPending)
     };
 
     const donate = async () => {
-        sendTransaction({ to: deployedContractData.address, value: parseEther(donationAmount+"")})
+        sendTransaction({to: deployedContractData.address, value: parseEther(donationAmount + "")})
     };
 
     return (

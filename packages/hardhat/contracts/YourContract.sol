@@ -188,6 +188,7 @@ contract YourContract {
 			{
 				totalQtyMissedAttestations += attestationMapping[registeredValidatorColl[i]];
 			}
+			console.log("registeredValidatorColl.length = ", registeredValidatorColl.length);
 			console.log("totalQtyMissedAttestations = ", totalQtyMissedAttestations);
 			uint valuePerBlockAndValidator = valueToDistribute / ((qtyBlocksInPeriod * registeredValidatorColl.length) - totalQtyMissedAttestations);
 			console.log("valuePerBlockAndValidator = ", valuePerBlockAndValidator);
