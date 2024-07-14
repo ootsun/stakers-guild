@@ -1,24 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using Nethereum.Web3;
+﻿using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
-using Nethereum.Contracts;
 using System.Numerics;
-using Nethereum.Util;
 using Nethereum.ABI.FunctionEncoding.Attributes;
-using Nethereum.ABI;
 using System.Text.Json;
 using System.Net.Http.Json;
-using System.Security.Cryptography.X509Certificates;
 using Nethereum.Hex.HexTypes;
-
-// [Function("genesisBlockNumber", "uint256")]
-// public class GetGenesisBlockFunction : FunctionMessage
-// {}
-
-// [Function("getRegisteredValidators", "uint32[]")]
-// public class GetRegisteredValidatorsFunction : FunctionMessage
-// {}
 
 [FunctionOutput]
 public class GetGenesisBlockOutputDTO
@@ -101,10 +87,17 @@ class Program
             Reward reward = JsonSerializer.Deserialize<Reward>(cont);
             uint[] inactiveValidatorColl = reward.data.total_rewards.Where(x => x.inactivity != "0").Select(x => uint.Parse(x.validator_index)).ToArray();
 
-            Console.WriteLine($"Calling contract function epochEnd for {inactiveValidatorColl.Length} inactive validators");
-            var processArrayFunction = contract.GetFunction("epochEnd");
-            var transactionHash = await processArrayFunction.SendTransactionAsync(account.Address, new HexBigInteger(600000), null, inactiveValidatorColl);
-            Console.WriteLine("Transaction hash: " + transactionHash);
+            if(inactiveValidatorColl.Length > 0)
+            {
+                Console.WriteLine($"Calling contract function epochEnd for {inactiveValidatorColl.Length} inactive validators.");
+                var processArrayFunction = contract.GetFunction("epochEnd");
+                var transactionHash = await processArrayFunction.SendTransactionAsync(account.Address, new HexBigInteger(600000), null, inactiveValidatorColl);
+                Console.WriteLine("Transaction hash: " + transactionHash);
+            }
+            else
+            {
+                Console.WriteLine("No validators have missed attestations, so not calling the contract to save gas.")
+            }
         }
     }
 }
