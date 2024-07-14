@@ -23,7 +23,7 @@ contract YourContract {
 	mapping(uint32 => address) public addressMapping; //validator id to registered address
 	mapping(address => uint32) public identityMapping; //validator owner to validator id
 	address private backEndWalletAddress = 0xa1E860D34A0D426f4159cB4221f9023d7341bEfB;
-	uint32 qtyBlocksPerEpoch = 1; //using a variable for this is easier to test on hardhat (should be 32 in prod)
+	uint32 qtyBlocksPerEpoch = 32; //using a variable for this is easier to test on hardhat (should be 32 in prod)
 
 	// Constructor: Called once on contract deployment
 	// Check packages/hardhat/deploy/00_deploy_your_contract.ts
