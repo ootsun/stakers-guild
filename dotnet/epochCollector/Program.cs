@@ -8,6 +8,9 @@ using Nethereum.Util;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.ABI;
 using System.Text.Json;
+using System.Net.Http.Json;
+using System.Security.Cryptography.X509Certificates;
+using Nethereum.Hex.HexTypes;
 
 // [Function("genesisBlockNumber", "uint256")]
 // public class GetGenesisBlockFunction : FunctionMessage
@@ -36,21 +39,19 @@ class Program
     static async Task Main(string[] args)
     {
         // Connect to the local Hardhat network
-        var url = "http://127.0.0.1:8545";
-        var web3 = new Web3(url);
-        
+        var nodeUrl = "http://127.0.0.1:8545";
+        //its address is 0x8192fF7F913511624853dC30d67B01fbACa2936f and has to be funded for calling the endEpoch functions
+        var account = new Account("0x0df368899a33d0ab16a93e21f6d1fdbbf30fefd21ef268179a7dfe38efa6ddbb");
+        string pk = account.PrivateKey;
+        var web3 = new Web3(account, nodeUrl);
+
         var contractJsonString = File.ReadAllText("../../packages/hardhat/deployments/localhost/YourContract.json");
         var yourContract = JsonSerializer.Deserialize<YourContract>(contractJsonString);
         var contract = web3.Eth.GetContract(JsonSerializer.Serialize(yourContract.Abi), yourContract.Address);
 
-        //an alternative
-        // var getGenesisBlockFunction = new GetGenesisBlockFunction();
-        // var getGenesisBlockHandler = web3.Eth.GetContractQueryHandler<GetGenesisBlockFunction>();
-        // var balanceBigInt = await getGenesisBlockHandler.QueryAsync<BigInteger>(contract.Address, getGenesisBlockFunction);
-
         var getGenesisBlockFunction = contract.GetFunction("genesisBlockNumber");
         bool startDonationHappened = false;
-        while(!startDonationHappened)
+        while (!startDonationHappened)
         {
             Thread.Sleep(2000);
             var resultGetGenesisBlock = await getGenesisBlockFunction.CallDeserializingToObjectAsync<GetGenesisBlockOutputDTO>();
@@ -59,22 +60,51 @@ class Program
         }
         Console.WriteLine("Startdonation occurred");
 
-        // HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://docs-demo.quiknode.pro") };
-        // Task<Stream> stream = httpClient.GetStreamAsync("eth/v1/events?topics=head");
-        // using (var reader = new StreamReader(await stream))
-        // {
-        //     while (!reader.EndOfStream)
-        //     {
-        //         var line = await reader.ReadLineAsync();
-        //         Console.WriteLine(line);
-        //     }
-        // }
-
-        var getRegisteredValidatorsFunction = contract.GetFunction("getRegisteredValidatorColl");
-        var resultGetRegisteredValidators = await getRegisteredValidatorsFunction.CallDeserializingToObjectAsync<GetRegisteredValidatorsOutputDTO>();
-        foreach (var number in resultGetRegisteredValidators.Numbers)
+        Console.WriteLine("Waiting for an epoch end");
+        while (true)
         {
-            Console.WriteLine(number);
+            HttpClient httpClient = new HttpClient 
+            { 
+                BaseAddress = new Uri("https://ultra-spring-dawn.quiknode.pro/a193b9a57b68aa32ff3b32e3a7eeaccc9e333385/"),
+                Timeout =  TimeSpan.FromMinutes(5)
+            };
+            Task<Stream> stream = httpClient.GetStreamAsync("eth/v1/events?topics=head");
+            HeadEvent? headEvent = null;
+            using (var reader = new StreamReader(await stream))
+            {
+                while (!reader.EndOfStream)
+                {
+                    string line = await reader.ReadLineAsync();
+                    while(!line.StartsWith("data"))
+                    {
+                        line = await reader.ReadLineAsync();
+                    }
+                    headEvent = JsonSerializer.Deserialize<HeadEvent>(line.Substring(5));
+                    if(headEvent is not null && headEvent.EpochTransition)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            Attestation attest = await httpClient.GetFromJsonAsync<Attestation>($"eth/v1/beacon/blocks/{headEvent.Slot}/attestations");
+            string epoch = attest.data.FirstOrDefault().data.source.epoch;
+            Console.WriteLine($"epoch {epoch} ended");
+
+            var getRegisteredValidatorsFunction = contract.GetFunction("getRegisteredValidatorColl");
+            var resultGetRegisteredValidators = await getRegisteredValidatorsFunction.CallDeserializingToObjectAsync<GetRegisteredValidatorsOutputDTO>();
+
+            //seems like the ended epoch is not still available in the api, so take the previous
+            HttpResponseMessage resp = await httpClient.PostAsJsonAsync($"eth/v1/beacon/rewards/attestations/{int.Parse(epoch) - 1}", 
+                resultGetRegisteredValidators.Numbers.Select(x => $"{x}").ToArray());
+            string cont = await resp.Content.ReadAsStringAsync();
+            Reward reward = JsonSerializer.Deserialize<Reward>(cont);
+            uint[] inactiveValidatorColl = reward.data.total_rewards.Where(x => x.inactivity != "0").Select(x => uint.Parse(x.validator_index)).ToArray();
+
+            Console.WriteLine($"Calling contract function epochEnd for {inactiveValidatorColl.Length} inactive validators");
+            var processArrayFunction = contract.GetFunction("epochEnd");
+            var transactionHash = await processArrayFunction.SendTransactionAsync(account.Address, new HexBigInteger(600000), null, inactiveValidatorColl);
+            Console.WriteLine("Transaction hash: " + transactionHash);
         }
     }
 }
