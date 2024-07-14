@@ -1,9 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-// Useful for debugging. Remove when deploying to a live network.
-import "hardhat/console.sol";
-
 // Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
 // import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -51,7 +48,7 @@ contract YourContract {
 	{
 		require(value < claimsMapping[identityMapping[msg.sender]], "amount to withdraw exceeds claimable amount");
 		claimsMapping[identityMapping[msg.sender]] -= value;
-		(bool sent, bytes memory data) = msg.sender.call{value: value}("");
+		(bool sent, ) = msg.sender.call{value: value}("");
         require(sent, "Failed to send Ether");
 	}
 
@@ -59,7 +56,6 @@ contract YourContract {
 	{
 		for(uint i = 0; i < missedAttestationValidatorColl.length; ++i)
 		{
-			console.log("missed attestation for validator with id ", missedAttestationValidatorColl[i]);
 			attestationMapping[missedAttestationValidatorColl[i]] += qtyBlocksPerEpoch;
 		}
 	}
@@ -80,7 +76,6 @@ contract YourContract {
         attestationMapping[validatorReference] = 0;
         identityMapping[msg.sender] = validatorReference;
 		addressMapping[validatorReference] = msg.sender;
-        console.log("adding validator ", validatorReference, " to the pending validator list");
         pendingValidatorColl.push(validatorReference);
 	}
 
@@ -89,53 +84,37 @@ contract YourContract {
 	 */
 	receive() external payable 
 	{
-		console.log("start receive function");
 		if(genesisBlockNumber != 0 && registeredValidatorColl.length > 0)
 		{
 			//the transferred value for this transaction is already included in the contract balance
-			console.log("contract balance = ", address(this).balance);
 			uint valueToDistribute = address(this).balance;
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
 				valueToDistribute -= claimsMapping[registeredValidatorColl[i]];
 			}
-			console.log("value to distribute = ", valueToDistribute);
 			uint qtyBlocksInPeriod = block.number - genesisBlockNumber;
-			console.log("qtyBlocksInPeriod = ", qtyBlocksInPeriod);
 			uint32 totalQtyMissedAttestations;
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
 				totalQtyMissedAttestations += attestationMapping[registeredValidatorColl[i]];
 			}
-			console.log("registeredValidatorColl.length = ", registeredValidatorColl.length);
-			console.log("totalQtyMissedAttestations = ", totalQtyMissedAttestations);
 			uint valuePerBlockAndValidator = valueToDistribute / ((qtyBlocksInPeriod * registeredValidatorColl.length) - totalQtyMissedAttestations);
-			console.log("valuePerBlockAndValidator = ", valuePerBlockAndValidator);
 			for(uint i = 0; i < registeredValidatorColl.length; ++i)
 			{
-				console.log("missed attestations for validator ", i, " = ", attestationMapping[registeredValidatorColl[i]]);
 				claimsMapping[registeredValidatorColl[i]] += (qtyBlocksInPeriod - attestationMapping[registeredValidatorColl[i]]) * valuePerBlockAndValidator;
-				console.log("value of ", claimsMapping[registeredValidatorColl[i]], " can now be claimed by validator ", registeredValidatorColl[i]);
 			}
 		}
 		genesisBlockNumber = block.number;
-		console.log("genesisBlockNumber = ", genesisBlockNumber);
 		if(pendingValidatorColl.length == 0)
 		{
-			console.log("returning from function because pendigValidatorColl is empty");
 			return;
 		}
 		//add the pending validators and clear the list
-		console.log("pendingValidatorColl.length = ", pendingValidatorColl.length);
 		for (int i = int(pendingValidatorColl.length - 1); i >= 0; --i)
 		{
-			console.log("moving validator ", pendingValidatorColl[uint(i)], " to the registered validator list");
 			registeredValidatorColl.push(pendingValidatorColl[uint(i)]);
-			console.log("pushed validator to the registeredValidatorColl");
 			pendingValidatorColl.pop();
-			console.log("removed validator from the pendigValidatorColl");
         }
-		console.log("end receive function");
 	}
 
 	function getMessageHash(string memory _msg) private pure returns (bytes32) {

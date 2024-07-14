@@ -25,13 +25,13 @@ class Program
     static async Task Main(string[] args)
     {
         // Connect to the local Hardhat network
-        var nodeUrl = "http://127.0.0.1:8545";
+        var nodeUrl = "https://sepolia-rpc.scroll.io";
         //its address is 0x8192fF7F913511624853dC30d67B01fbACa2936f and has to be funded for calling the endEpoch functions
         var account = new Account("0x0df368899a33d0ab16a93e21f6d1fdbbf30fefd21ef268179a7dfe38efa6ddbb");
         string pk = account.PrivateKey;
         var web3 = new Web3(account, nodeUrl);
 
-        var contractJsonString = File.ReadAllText("../../packages/hardhat/deployments/localhost/YourContract.json");
+        var contractJsonString = File.ReadAllText("../../packages/hardhat/deployments/scrollSepolia/YourContract.json");
         var yourContract = JsonSerializer.Deserialize<YourContract>(contractJsonString);
         var contract = web3.Eth.GetContract(JsonSerializer.Serialize(yourContract.Abi), yourContract.Address);
 
@@ -81,7 +81,7 @@ class Program
             var resultGetRegisteredValidators = await getRegisteredValidatorsFunction.CallDeserializingToObjectAsync<GetRegisteredValidatorsOutputDTO>();
 
             //seems like the ended epoch is not still available in the api, so take the previous
-            HttpResponseMessage resp = await httpClient.PostAsJsonAsync($"eth/v1/beacon/rewards/attestations/{int.Parse(epoch) - 1}", 
+            HttpResponseMessage resp = await httpClient.PostAsJsonAsync($"eth/v1/beacon/rewards/attestations/{int.Parse(epoch) - 10}", 
                 resultGetRegisteredValidators.Numbers.Select(x => $"{x}").ToArray());
             string cont = await resp.Content.ReadAsStringAsync();
             Reward reward = JsonSerializer.Deserialize<Reward>(cont);
@@ -96,7 +96,7 @@ class Program
             }
             else
             {
-                Console.WriteLine("No validators have missed attestations, so not calling the contract to save gas.")
+                Console.WriteLine("No validators have missed attestations, so not calling the contract to save gas.");
             }
         }
     }

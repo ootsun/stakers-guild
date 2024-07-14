@@ -235,7 +235,7 @@ const deployedContracts = {
   },
   534351: {
     YourContract: {
-      address: "0x66AFA8aFD66382D23b99B6fC37e049aF55Bed260",
+      address: "0x9AC6FAC3090A4325E61ffccd5593306A1f6B4d9c",
       abi: [
         {
           inputs: [

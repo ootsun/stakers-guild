@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/YourContract.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity >=0.8.0 <0.9.0;\n\n// Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)\n// import \"@openzeppelin/contracts/access/Ownable.sol\";\n\n/**\n * A smart contract that allows changing a state variable of the contract and tracking the changes\n * It also allows the owner to withdraw the Ether in the contract\n * @author BuidlGuidl\n */\ncontract YourContract {\n\t// State Variables\n\taddress public immutable owner;\n\tuint public genesisBlockNumber = 0; //the block number from which the last donation started\n\tuint32[] public pendingValidatorColl; //the validators to add on the next donation\n\tuint32[] public registeredValidatorColl; //used to iterate the mappings which have the validator key as id\n\tmapping(uint32 => uint) public claimsMapping; //validator id to claimable value\n\tmapping(uint32 => uint32) public attestationMapping; //validator id to qyt of missed attestation blocks\n\tmapping(uint32 => address) public addressMapping; //validator id to registered address\n\tmapping(address => uint32) public identityMapping; //validator owner to validator id\n\taddress private backEndWalletAddress = 0xa1E860D34A0D426f4159cB4221f9023d7341bEfB;\n\tuint32 qtyBlocksPerEpoch = 32; //using a variable for this is easier to test on hardhat (should be 32 in prod)\n\n\t// Constructor: Called once on contract deployment\n\t// Check packages/hardhat/deploy/00_deploy_your_contract.ts\n\tconstructor(address _owner) {\n\t\towner = _owner;\n\t}\n\n\t// Modifier: used to define a set of rules that must be met before or after a function is executed\n\t// Check the withdraw() function\n\tmodifier isOwner() {\n\t\t// msg.sender: predefined variable that represents address of the account that called the current function\n\t\trequire(msg.sender == owner, \"Not the Owner\");\n\t\t_;\n\t}\n\n\tfunction getPendingValidatorColl() public view returns (uint32[] memory) {\n\t\treturn pendingValidatorColl;\n\t}\n\n\tfunction getRegisteredValidatorColl() public view returns (uint32[] memory) {\n\t\treturn registeredValidatorColl;\n\t}\n\n\tfunction claim(uint value) public\n\t{\n\t\trequire(value < claimsMapping[identityMapping[msg.sender]], \"amount to withdraw exceeds claimable amount\");\n\t\tclaimsMapping[identityMapping[msg.sender]] -= value;\n\t\t(bool sent, ) = msg.sender.call{value: value}(\"\");\n        require(sent, \"Failed to send Ether\");\n\t}\n\n\tfunction epochEnd(uint32[] calldata missedAttestationValidatorColl) public\n\t{\n\t\tfor(uint i = 0; i < missedAttestationValidatorColl.length; ++i)\n\t\t{\n\t\t\tattestationMapping[missedAttestationValidatorColl[i]] += qtyBlocksPerEpoch;\n\t\t}\n\t}\n\n\t/**\n\t * Function that allows a solo staker to register\n\t */\n\tfunction register(uint32 validatorReference) public\n    {\n        //Could not make it work\n//\t\tbytes32  _hashMessage = getMessageHash(_message);\n//\t\tbytes32 _ethHashMessage = getEthHashedMessage(_hashMessage);\n//\t\taddress signer = recover(stringToBytes32(_message), signature);\n//\t\tconsole.log(\"signer=\",signer);\n//\t\tconsole.log(\"backEndWalletAddress=\",backEndWalletAddress);\n//\t\trequire (signer == backEndWalletAddress, \"Signature is not valid\");\n        claimsMapping[validatorReference] = 0;\n        attestationMapping[validatorReference] = 0;\n        identityMapping[msg.sender] = validatorReference;\n\t\taddressMapping[validatorReference] = msg.sender;\n        pendingValidatorColl.push(validatorReference);\n\t}\n\n\t/**\n\t * Function that allows the contract to receive a donation of ETH\n\t */\n\treceive() external payable \n\t{\n\t\tif(genesisBlockNumber != 0 && registeredValidatorColl.length > 0)\n\t\t{\n\t\t\t//the transferred value for this transaction is already included in the contract balance\n\t\t\tuint valueToDistribute = address(this).balance;\n\t\t\tfor(uint i = 0; i < registeredValidatorColl.length; ++i)\n\t\t\t{\n\t\t\t\tvalueToDistribute -= claimsMapping[registeredValidatorColl[i]];\n\t\t\t}\n\t\t\tuint qtyBlocksInPeriod = block.number - genesisBlockNumber;\n\t\t\tuint32 totalQtyMissedAttestations;\n\t\t\tfor(uint i = 0; i < registeredValidatorColl.length; ++i)\n\t\t\t{\n\t\t\t\ttotalQtyMissedAttestations += attestationMapping[registeredValidatorColl[i]];\n\t\t\t}\n\t\t\tuint valuePerBlockAndValidator = valueToDistribute / ((qtyBlocksInPeriod * registeredValidatorColl.length) - totalQtyMissedAttestations);\n\t\t\tfor(uint i = 0; i < registeredValidatorColl.length; ++i)\n\t\t\t{\n\t\t\t\tclaimsMapping[registeredValidatorColl[i]] += (qtyBlocksInPeriod - attestationMapping[registeredValidatorColl[i]]) * valuePerBlockAndValidator;\n\t\t\t}\n\t\t}\n\t\tgenesisBlockNumber = block.number;\n\t\tif(pendingValidatorColl.length == 0)\n\t\t{\n\t\t\treturn;\n\t\t}\n\t\t//add the pending validators and clear the list\n\t\tfor (int i = int(pendingValidatorColl.length - 1); i >= 0; --i)\n\t\t{\n\t\t\tregisteredValidatorColl.push(pendingValidatorColl[uint(i)]);\n\t\t\tpendingValidatorColl.pop();\n        }\n\t}\n\n\tfunction getMessageHash(string memory _msg) private pure returns (bytes32) {\n\t\treturn keccak256(abi.encodePacked(_msg));\n\t}\n\n\tfunction getEthHashedMessage(bytes32 _msg)\n\tprivate\n\tpure\n\treturns (bytes32)\n\t{\n\t\treturn\n\t\t\tkeccak256(\n\t\t\tabi.encodePacked(\"\\x19Ethereum Signed Message:\\n32\", _msg)\n\t\t);\n\t}\n\n\tfunction recover(bytes32 _ethHashMessage , bytes memory _sig) private pure returns(address){\n\t\t(bytes32 r , bytes32 s , uint8 v) = _split(_sig);\n\t\treturn ecrecover(_ethHashMessage, v, r, s);\n\t}\n\n\tfunction _split(bytes memory _sig) private pure returns(bytes32 r ,bytes32 s , uint8 v) {\n\t\trequire(_sig.length==65,\"Signature is not valid\");\n\t\tassembly{\n\t\t\tr :=mload(add(_sig,32))\n\t\t\ts := mload(add(_sig,64))\n\t\t\tv :=byte(0,mload(add(_sig,96)))\n\t\t}\n\t}\n\n\tfunction stringToBytes32(string memory source) private pure returns (bytes32 result) {\n\t\tbytes memory tempEmptyStringTest = bytes(source);\n\t\tif (tempEmptyStringTest.length == 0) {\n\t\t\treturn 0x0;\n\t\t}\n\n\t\tassembly {\n\t\t// Load the first 32 bytes of the string and store it in result\n\t\t\tresult := mload(add(source, 32))\n\t\t}\n\t}\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
