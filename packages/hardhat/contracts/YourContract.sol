@@ -15,11 +15,6 @@ import "hardhat/console.sol";
 contract YourContract {
 	// State Variables
 	address public immutable owner;
-	// string public greeting = "Building Unstoppable Apps!!!";
-	// bool public premium = false;
-	// uint256 public totalCounter = 0;
-	// mapping(address => uint) public userGreetingCounter;
-
 	uint public genesisBlockNumber = 0; //the block number from which the last donation started
 	uint32[] public pendingValidatorColl; //the validators to add on the next donation
 	uint32[] public registeredValidatorColl; //used to iterate the mappings which have the validator key as id
@@ -29,14 +24,6 @@ contract YourContract {
 	mapping(address => uint32) public identityMapping; //validator owner to validator id
 	address private backEndWalletAddress = 0xa1E860D34A0D426f4159cB4221f9023d7341bEfB;
 	uint32 qtyBlocksPerEpoch = 1; //using a variable for this is easier to test on hardhat (should be 32 in prod)
-
-	// Events: a way to emit log statements from smart contract that can be listened to by external parties
-	// event GreetingChange(
-	// 	address indexed greetingSetter,
-	// 	string newGreeting,
-	// 	bool premium,
-	// 	uint256 value
-	// );
 
 	// Constructor: Called once on contract deployment
 	// Check packages/hardhat/deploy/00_deploy_your_contract.ts
@@ -68,52 +55,12 @@ contract YourContract {
         require(sent, "Failed to send Ether");
 	}
 
-	function epochEnd(uint32[] calldata missedAssestationValidatorColl) public
+	function epochEnd(uint32[] calldata missedAttestationValidatorColl) public
 	{
-		for(uint i = 0; i < missedAssestationValidatorColl.length; ++i)
+		for(uint i = 0; i < missedAttestationValidatorColl.length; ++i)
 		{
-			attestationMapping[missedAssestationValidatorColl[i]] += qtyBlocksPerEpoch;
-		}
-	}
-
-	function getMessageHash(string memory _msg) private pure returns (bytes32) {
-		return keccak256(abi.encodePacked(_msg));
-	}
-
-	function getEthHashedMessage(bytes32 _msg)
-	private
-	pure
-	returns (bytes32)
-	{
-		return
-			keccak256(
-			abi.encodePacked("\x19Ethereum Signed Message:\n32", _msg)
-		);
-	}
-
-	function recover(bytes32 _ethHashMessage , bytes memory _sig) private pure returns(address){
-		(bytes32 r , bytes32 s , uint8 v) = _split(_sig);
-		return ecrecover(_ethHashMessage, v, r, s);
-	}
-
-	function _split(bytes memory _sig) private pure returns(bytes32 r ,bytes32 s , uint8 v) {
-		require(_sig.length==65,"Signature is not valid");
-		assembly{
-			r :=mload(add(_sig,32))
-			s := mload(add(_sig,64))
-			v :=byte(0,mload(add(_sig,96)))
-		}
-	}
-
-	function stringToBytes32(string memory source) private pure returns (bytes32 result) {
-		bytes memory tempEmptyStringTest = bytes(source);
-		if (tempEmptyStringTest.length == 0) {
-			return 0x0;
-		}
-
-		assembly {
-		// Load the first 32 bytes of the string and store it in result
-			result := mload(add(source, 32))
+			console.log("missed attestation for validator with id ", missedAttestationValidatorColl[i]);
+			attestationMapping[missedAttestationValidatorColl[i]] += qtyBlocksPerEpoch;
 		}
 	}
 
@@ -189,5 +136,46 @@ contract YourContract {
 			console.log("removed validator from the pendigValidatorColl");
         }
 		console.log("end receive function");
+	}
+
+	function getMessageHash(string memory _msg) private pure returns (bytes32) {
+		return keccak256(abi.encodePacked(_msg));
+	}
+
+	function getEthHashedMessage(bytes32 _msg)
+	private
+	pure
+	returns (bytes32)
+	{
+		return
+			keccak256(
+			abi.encodePacked("\x19Ethereum Signed Message:\n32", _msg)
+		);
+	}
+
+	function recover(bytes32 _ethHashMessage , bytes memory _sig) private pure returns(address){
+		(bytes32 r , bytes32 s , uint8 v) = _split(_sig);
+		return ecrecover(_ethHashMessage, v, r, s);
+	}
+
+	function _split(bytes memory _sig) private pure returns(bytes32 r ,bytes32 s , uint8 v) {
+		require(_sig.length==65,"Signature is not valid");
+		assembly{
+			r :=mload(add(_sig,32))
+			s := mload(add(_sig,64))
+			v :=byte(0,mload(add(_sig,96)))
+		}
+	}
+
+	function stringToBytes32(string memory source) private pure returns (bytes32 result) {
+		bytes memory tempEmptyStringTest = bytes(source);
+		if (tempEmptyStringTest.length == 0) {
+			return 0x0;
+		}
+
+		assembly {
+		// Load the first 32 bytes of the string and store it in result
+			result := mload(add(source, 32))
+		}
 	}
 }
