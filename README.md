@@ -67,3 +67,14 @@ The first donation is the starting point for the collection of the failed attest
 The first distribution of the value will happen in the second donation. The first donation serves as a starting point. so on the second donation the value of the first and second donation will be distributed
 from the third donation on, only the value of the donation of the donation itself will be distributed among registered validators, based on their attestations.
 The daemon should only send epoch ends for validators in the registered validators collection. If no validators have missed attestations, no epochEnd message is sent.
+
+missed attestation daemon
+-------------------------
+
+A back-ends service monitors the attestations for registered validators on the beacon chain. Failed attestations are monitored and registered to the smart contract, by calling the endEpoch function.
+
+The damon does not start monitoring attestations before the first donation has happened, because all registered validators are still in a pending state.
+
+On the first donation, the daemon starts to monitor the QuickNode api until an epoch transition occurs. At that moment, the list of registered validators is retrieved from the smart contract, in order to know which validator attestations have to be fetched from the api. 
+
+Validators, that missed their attestation, are selected from the result an sent to the smart contract for bookkeeping. When this is done, the daemon starts the next iteration by waiting to an epoch transition.
