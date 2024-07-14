@@ -2,9 +2,9 @@
 
 import {useReadContract} from "wagmi";
 import {useTargetNetwork} from "~~/hooks/scaffold-eth";
-import React, {useState} from "react";
+import React from "react";
 import {Address} from "~~/components/scaffold-eth";
-import {BlockscoutLink} from "~~/components/BlockscoutLink";
+import {ethers} from "ethers";
 
 type LeaderboardMemberDataProps = {
     deployedContractData: any;
@@ -15,7 +15,7 @@ type Member = {
     address: string;
     validatorId: number;
     missedAttestation: number;
-    claimableValue: number;
+    claimableValue: string;
 }
 
 export const LeaderboardMemberData = ({deployedContractData, memberIndexes}: LeaderboardMemberDataProps) => {
@@ -60,12 +60,13 @@ export const LeaderboardMemberData = ({deployedContractData, memberIndexes}: Lea
             address: String(addressesCall.data),
             validatorId: index,
             missedAttestation: Number(attestationsCall.data),
-            claimableValue: Number(claimsCall.data)
+            claimableValue: String(claimsCall.data)
         }
         return member;
     })
+    console.log(members[0].claimableValue)
     const allLoaded = members.every((member) => {
-        return member.address != "undefined" && member.missedAttestation >= 0 && member.claimableValue >= 0
+        return member.address != "undefined" && member.missedAttestation >= 0 && member.claimableValue != "undefined"
     })
     if (!allLoaded) {
         return (
@@ -95,7 +96,7 @@ export const LeaderboardMemberData = ({deployedContractData, memberIndexes}: Lea
                                 <td><Address address={member.address} format="long"/></td>
                                 <td>{member.validatorId}</td>
                                 <td>{member.missedAttestation}</td>
-                                <td>{member.claimableValue}</td>
+                                <td>{ethers.formatEther(member.claimableValue)} ETH</td>
                             </tr>
                         ))}
                         </tbody>
