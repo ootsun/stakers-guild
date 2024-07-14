@@ -20,11 +20,6 @@ export const menuLinks: HeaderMenuLink[] = [
     href: "/",
   },
   {
-    label: "Debug Contracts",
-    href: "/debug",
-    icon: <BugAntIcon className="h-4 w-4" />,
-  },
-  {
     label: "Register",
     href: "/register",
   },
@@ -102,6 +97,9 @@ export const Header = () => {
           )}
         </div>
         <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
+          <div className="flex relative w-10 h-10">
+            <Image alt="Stakers Guild logo" className="cursor-pointer" fill src="/logo.png" />
+          </div>
           <div className="flex flex-col">
             <span className="font-bold leading-tight">Stakers Guild</span>
             <span className="text-xs">Protocol Guild but for Solo Stakers</span>
