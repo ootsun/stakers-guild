@@ -63,7 +63,7 @@ todo update with Worldcoin : the identity of the validator owner (msg sender) is
 at the end of every epoch this function will be called and contains a list of all validators with a missed attestations
 this list is iterated and the value of all corresponding values in the attestation mapping is incremented by 32
 
-The first donation is het starting point for the collection of the failed attestation statistics, so the daemon should only start calling epoch end function when the genesis block != 0.
+The first donation is the starting point for the collection of the failed attestation statistics, so the daemon should only start calling epoch end function when the genesis block != 0.
 The first distribution of the value will happen in the second donation. The first donation serves as a starting point. so on the second donation the value of the first and second donation will be distributed
 from the third donation on, only the value of the donation of the donation itself will be distributed among registered validators, based on their attestations.
 The daemon should only send epoch ends for validators in the registered validators collection. If no validators have missed attestations, no epochEnd message is sent.
